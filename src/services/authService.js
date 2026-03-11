@@ -38,3 +38,10 @@ export const loginUser = async (email, password) => {
 export const getAllUsers = async () => {
   return await User.find().select("-password");
 };
+
+export const logoutUser = async (token) => {
+  // Invalidate token (for stateless JWT, this is typically done on the client side by deleting the token)
+  // For demonstration, we can simply return a success message
+
+  return { success: true, message: "Logout successful" };
+};
