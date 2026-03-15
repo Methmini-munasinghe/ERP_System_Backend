@@ -1,5 +1,7 @@
-import User from "../model/User.js";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
+import User from "../model/User.js";
+import sendEmail from "../util/sendEmail.js";
 
 export const registerUser = async (data) => {
   const { name, email, password, role } = data;
@@ -40,8 +42,46 @@ export const getAllUsers = async () => {
 };
 
 export const logoutUser = async (token) => {
-  // Invalidate token (for stateless JWT, this is typically done on the client side by deleting the token)
-  // For demonstration, we can simply return a success message
-
   return { success: true, message: "Logout successful" };
+};
+
+export const forgotPasswordService = async (email) => {
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  const resetToken = crypto.randomBytes(20).toString("hex");
+
+  user.resetPasswordToken = resetToken;
+  user.resetPasswordExpire = Date.now() + 3600000;
+
+  await user.save();
+
+  await sendEmail({
+    to: user.email,
+    subject: "Password Reset",
+    text: `Reset link: http://localhost:3000/reset-password/${resetToken}`,
+  });
+};
+
+export const resetPasswordService = async (token, password) => {
+  const user = await User.findOne({
+    resetPasswordToken: token,
+    resetPasswordExpire: { $gt: Date.now() },
+  });
+  if (!user) {
+    throw new Error("Invalid or expired token");
+  }
+
+  const salt = await bcrypt.genSalt(10);
+  user.password = await bcrypt.hash(password, salt);
+
+  user.resetPasswordToken = undefined;
+  user.resetPasswordExpire = undefined;
+
+  await user.save();
+
+  return user;
 };

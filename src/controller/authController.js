@@ -1,4 +1,9 @@
-import { registerUser, loginUser, getAllUsers } from "../services/authService.js";
+import {
+  registerUser,
+  loginUser,
+  forgotPasswordService,
+  resetPasswordService,
+} from "../services/authService.js";
 import generateToken from "../util/generateToken.js";
 
 export const register = async (req, res, next) => {
@@ -19,7 +24,6 @@ export const register = async (req, res, next) => {
     next(error);
   }
 };
-
 
 export const login = async (req, res, next) => {
   try {
@@ -43,7 +47,6 @@ export const login = async (req, res, next) => {
   }
 };
 
-
 export const getUsers = async (req, res, next) => {
   try {
     const users = await getAllUsers();
@@ -63,4 +66,30 @@ export const logout = (req, res) => {
     message: "Logout successful",
   });
   caches.delete("token");
+};
+
+export const forgotPassword = async (req, res, next) => {
+  try {
+    await forgotPasswordService(req.body.email);
+
+    res.json({
+      success: true,
+      message: "Password reset email sent",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const resetPassword = async (req, res, next) => {
+  try {
+    await resetPasswordService(req.params.token, req.body.password);
+
+    res.json({
+      success: true,
+      message: "Password reset successful",
+    });
+  } catch (error) {
+    next(error);
+  }
 };
