@@ -1,10 +1,13 @@
 import bcrypt from "bcryptjs";
-import crypto from "crypto";
 import User from "../model/User.js";
 import sendEmail from "../util/sendEmail.js";
 
 export const registerUser = async (data) => {
-  const { name, email, password, role } = data;
+  const { name, email, phone, password, confirmPassword, role } = data;
+
+  if (password !== confirmPassword) {
+    throw new Error("Passwords do not match");
+  }
 
   const existingUser = await User.findOne({ email });
   if (existingUser) {
@@ -16,6 +19,7 @@ export const registerUser = async (data) => {
   const user = await User.create({
     name,
     email,
+    phone,
     password: hashedPassword,
     role,
   });
@@ -25,11 +29,13 @@ export const registerUser = async (data) => {
 
 export const loginUser = async (email, password) => {
   const user = await User.findOne({ email });
+
   if (!user) {
     throw new Error("Invalid email or password");
   }
 
   const match = await bcrypt.compare(password, user.password);
+
   if (!match) {
     throw new Error("Invalid email or password");
   }
@@ -41,10 +47,6 @@ export const getAllUsers = async () => {
   return await User.find().select("-password");
 };
 
-export const logoutUser = async (token) => {
-  return { success: true, message: "Logout successful" };
-};
-
 export const forgotPasswordService = async (email) => {
   const user = await User.findOne({ email });
 
@@ -52,34 +54,59 @@ export const forgotPasswordService = async (email) => {
     throw new Error("User not found");
   }
 
-  const resetToken = crypto.randomBytes(20).toString("hex");
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-  user.resetPasswordToken = resetToken;
-  user.resetPasswordExpire = Date.now() + 3600000;
+  user.resetPasswordOtp = otp;
+  user.resetPasswordOtpExpire = Date.now() + 10 * 60 * 1000;
+  user.isResetOtpVerified = false;
 
   await user.save();
 
   await sendEmail({
     to: user.email,
-    subject: "Password Reset",
-    text: `Reset link: http://localhost:3000/reset-password/${resetToken}`,
+    subject: "Password Reset OTP",
+    text: `Your password reset OTP is: ${otp}. It will expire in 10 minutes.`,
   });
 };
 
-export const resetPasswordService = async (token, password) => {
+export const verifyResetOtpService = async (email, otp) => {
   const user = await User.findOne({
-    resetPasswordToken: token,
-    resetPasswordExpire: { $gt: Date.now() },
+    email,
+    resetPasswordOtp: otp,
+    resetPasswordOtpExpire: { $gt: Date.now() },
   });
+
   if (!user) {
-    throw new Error("Invalid or expired token");
+    throw new Error("Invalid or expired OTP");
+  }
+
+  user.isResetOtpVerified = true;
+  await user.save();
+
+  return true;
+};
+
+export const resetPasswordService = async (email, password, confirmPassword) => {
+  if (password !== confirmPassword) {
+    throw new Error("Passwords do not match");
+  }
+
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  if (!user.isResetOtpVerified) {
+    throw new Error("OTP verification required");
   }
 
   const salt = await bcrypt.genSalt(10);
   user.password = await bcrypt.hash(password, salt);
 
-  user.resetPasswordToken = undefined;
-  user.resetPasswordExpire = undefined;
+  user.resetPasswordOtp = undefined;
+  user.resetPasswordOtpExpire = undefined;
+  user.isResetOtpVerified = false;
 
   await user.save();
 

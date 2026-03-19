@@ -1,7 +1,9 @@
 import {
   registerUser,
   loginUser,
+  getAllUsers,
   forgotPasswordService,
+  verifyResetOtpService,
   resetPasswordService,
 } from "../services/authService.js";
 import generateToken from "../util/generateToken.js";
@@ -16,6 +18,7 @@ export const register = async (req, res, next) => {
       data: {
         id: user._id,
         name: user.name,
+        phone: user.phone,
         email: user.email,
         role: user.role,
       },
@@ -65,16 +68,30 @@ export const logout = (req, res) => {
     success: true,
     message: "Logout successful",
   });
-  caches.delete("token");
 };
 
 export const forgotPassword = async (req, res, next) => {
   try {
     await forgotPasswordService(req.body.email);
 
-    res.json({
+    res.status(200).json({
       success: true,
-      message: "Password reset email sent",
+      message: "OTP sent to your email",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const verifyResetOtp = async (req, res, next) => {
+  try {
+    const { email, otp } = req.body;
+
+    await verifyResetOtpService(email, otp);
+
+    res.status(200).json({
+      success: true,
+      message: "OTP verified successfully",
     });
   } catch (error) {
     next(error);
@@ -83,9 +100,11 @@ export const forgotPassword = async (req, res, next) => {
 
 export const resetPassword = async (req, res, next) => {
   try {
-    await resetPasswordService(req.params.token, req.body.password);
+    const { email, password, confirmPassword } = req.body;
 
-    res.json({
+    await resetPasswordService(email, password, confirmPassword);
+
+    res.status(200).json({
       success: true,
       message: "Password reset successful",
     });
