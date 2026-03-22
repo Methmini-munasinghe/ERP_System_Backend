@@ -4,6 +4,8 @@
   "description": "Enterprise Resource Planning (ERP) backend service — REST API built with Node.js, Express.js and MongoDB Atlas",
   "main": "index.js",
   "scripts": {
+    "start": "nodemon src/index.js",
+    "dev": "nodemon src/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
