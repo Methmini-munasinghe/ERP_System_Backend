@@ -48,7 +48,7 @@ const editSupplier = async (req, res) => {
 
 const getAllSuppliers = async (req, res) => {
   try {
-    const suppliers = await Supplier.find().sort({ createdAt: -1 });
+    const suppliers = await Supplier.find({ isActive: true }).sort({ createdAt: -1 });
 
     return res.status(200).json({
       success: true,
