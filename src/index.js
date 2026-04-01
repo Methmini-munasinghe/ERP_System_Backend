@@ -1,12 +1,12 @@
-const express = require('express');
-const connectDB = require('./config/db.js');
-const cors = require('cors');
-const { default: categoryRouter } = require('./routes/categoryRouter.js');
-const { default: productRouter } = require('./routes/productRouter.js');
-import authRoutes from "./routes/authRoutes.js";
+import express from "express";
+import connectDB from "./config/db.js";
+import cors from 'cors';
+import categoryRouter from './routes/categoryRouter.js';
+import productRouter from './routes/productRouter.js'; 
 import authRoutes from "./routes/authRoutes.js";
 import { notFound, errorHandler } from "./middleware/errorMiddleware.js";
-require('dotenv').config();
+import dotenv from "dotenv";
+dotenv.config();
 
 const app = express();
 
