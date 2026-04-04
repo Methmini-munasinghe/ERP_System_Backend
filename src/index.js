@@ -1,17 +1,17 @@
 import express from "express";
-import cors from "cors";
-import dotenv from "dotenv";
 import connectDB from "./config/db.js";
+import cors from 'cors';
+import categoryRouter from './routes/categoryRouter.js';
+import productRouter from './routes/productRouter.js'; 
 import authRoutes from "./routes/authRoutes.js";
-import categoryRouter from "./routes/categoryRouter.js";
-import productRouter from "./routes/productRouter.js";  
 import { notFound, errorHandler } from "./middleware/errorMiddleware.js";
-
+import dotenv from "dotenv";
 dotenv.config();
 
 const app = express();
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 connectDB();
 
